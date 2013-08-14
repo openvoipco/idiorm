@@ -115,6 +115,9 @@
         // Should the query include a DISTINCT keyword?
         protected $_distinct = false;
 
+        // Should the query include a SQL_CALC_FOUND_ROWS keyword?
+        protected $_calc_found_rows = false;
+        
         // Is this a raw query?
         protected $_is_raw_query = false;
 
@@ -573,6 +576,15 @@
         }
 
         /**
+         * Tell the ORM that you wish to execute a FOUND_ROWS query.
+         * Will return an integer representing the number of
+         * rows returned.
+         */
+        public function found_rows() {
+            return intval(self::$_db[$this->_connection_name]->query('SELECT FOUND_ROWS();')->fetch(PDO::FETCH_COLUMN));
+        }
+        
+        /**
          * Tell the ORM that you wish to execute a MAX query.
          * Will return the max value of the choosen column.
          */
@@ -803,6 +815,14 @@
             return $this;
         }
 
+        /**
+         * Add a SQL_CALC_FOUND_ROWS keyword before the list of columns in the SELECT query
+         */
+        public function calc_found_rows() {
+            $this->_calc_found_rows = true;
+            return $this;
+        }
+        
         /**
          * Internal method to add a JOIN source to the query.
          *
@@ -1295,6 +1315,10 @@
                 $result_columns = 'DISTINCT ' . $result_columns;
             }
 
+            if ($this->_calc_found_rows) {
+                $result_columns = 'SQL_CALC_FOUND_ROWS ' . $result_columns;
+            }
+            
             $fragment = "SELECT {$result_columns} FROM " . $this->_quote_identifier($this->_table_name);
 
             if (!is_null($this->_table_alias)) {
